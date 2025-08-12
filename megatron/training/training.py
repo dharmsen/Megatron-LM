@@ -1708,6 +1708,9 @@ def training_log(
             elapsed_time_per_iteration * 10**12 * args.world_size
         )
 
+        tokens_per_step = args.seq_length * args.global_batch_size
+        tokens_per_ms = tokens_per_step / elapsed_time_per_iteration * 1000.0
+
         one_logger_utils.track_e2e_metrics(args.log_throughput, throughput)
 
         if args.log_timers_to_tensorboard:
@@ -1730,6 +1733,12 @@ def training_log(
                     writer.add_scalar('throughput', throughput, iteration)
                 if wandb_writer:
                     wandb_writer.log({'throughput': throughput}, iteration)
+            log_string += f' tokens per ms: {tokens_per_ms:.1f} |'
+            if args.lolg_timers_to_tensorboard:
+                if writer:
+                    writer.add_scalar('tokens/ms', tokens_per_ms, iteration)
+                if wandb_writer:
+                    wandb_writer.log({'tokens/ms': tokens_per_ms}, iteration)
         if args.log_energy:
             energy = (energy_monitor.lap() / total_iterations) / args.world_size
             power = energy / elapsed_time_per_iteration
