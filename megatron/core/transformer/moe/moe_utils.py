@@ -771,7 +771,25 @@ def track_moe_metrics(
             # As a workaround, we log each scalar individually first, then we can create
             # a custom panel to manually group them to a single plot.
             if wandb_writer:
+                # Log aggregated metric
                 wandb_writer.log({f"{name}": loss_list.sum() / num_moe_layers}, iteration)
+                # Also log routing load distribution: per-expert token counts and normalized distribution
+                try:
+                    # tracker stores raw values in tracker[name]['values'] matching aux_losses
+                    per_expert_counts = tracker[name]['values'].float()
+                    total = per_expert_counts.sum()
+                    if total == 0:
+                        normalized = torch.zeros_like(per_expert_counts)
+                    else:
+                        normalized = per_expert_counts / total
+                    # Move to CPU for W&B
+                    per_expert_counts_cpu = per_expert_counts.cpu().tolist()
+                    normalized_cpu = normalized.cpu().tolist()
+                    wandb_writer.log({f"{name}_per_expert_counts": per_expert_counts_cpu}, iteration)
+                    wandb_writer.log({f"{name}_per_expert_normalized": normalized_cpu}, iteration)
+                except Exception:
+                    # Fallback to original behavior if tracker not available
+                    wandb_writer.log({f"{name}": loss_list.sum() / num_moe_layers}, iteration)
                 if per_layer_logging:
                     wandb_writer.log(
                         {
