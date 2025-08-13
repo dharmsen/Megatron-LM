@@ -1717,7 +1717,7 @@ def training_log(
             if writer:
                 writer.add_scalar('iteration-time', elapsed_time_per_iteration, iteration)
             if wandb_writer:
-                wandb_writer.log({'iteration-time': elapsed_time_per_iteration}, iteration)
+                wandb_writer.log({'iteration-time': float(elapsed_time_per_iteration)}, step=int(iteration))
         log_string = f" [{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}]"
         log_string += ' iteration {:8d}/{:8d} |'.format(iteration, args.train_iters)
         log_string += ' consumed samples: {:12d} |'.format(args.consumed_train_samples)
@@ -1732,13 +1732,13 @@ def training_log(
                 if writer:
                     writer.add_scalar('throughput', throughput, iteration)
                 if wandb_writer:
-                    wandb_writer.log({'throughput': throughput}, iteration)
+                    wandb_writer.log({'throughput': float(throughput)}, step=int(iteration))
             log_string += f' tokens per ms: {tokens_per_ms:.1f} |'
             if args.log_timers_to_tensorboard:
                 if writer:
                     writer.add_scalar('tokens/ms', tokens_per_ms, iteration)
                 if wandb_writer:
-                    wandb_writer.log({'tokens/ms': tokens_per_ms}, iteration)
+                    wandb_writer.log({'tokens/ms': float(tokens_per_ms)}, step=int(iteration))
         if args.log_energy:
             energy = (energy_monitor.lap() / total_iterations) / args.world_size
             power = energy / elapsed_time_per_iteration
